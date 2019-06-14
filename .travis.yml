@@ -1,0 +1,24 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t tomlingo/react-test -f ./client/Dockerfile.ci .
+
+script:
+  - docker run tomlingo/react-test npm test-- --coverage
+
+after_success:
+  - docker build -t tomlingo/multi-client ./client .
+  - docker build -t tomlingo/multi-nginx ./nginx .
+  - docker build -t tomlingo/multi-server ./server .
+  - docker build -t tomlingo/multi-worker ./worker .
+
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take those images and push them to docker hub
+  - docker push tomlingo/multi-client 
+  - docker push tomlingo/multi-nginx
+  - docker push tomlingo/multi-server 
+  - docker push tomlingo/multi-worker 
